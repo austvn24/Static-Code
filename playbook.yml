@@ -1,0 +1,92 @@
+---
+  - name: deploy static html site
+    hosts: live
+    become: true
+    tasks:
+
+      - name: Add group "WebAdmins" to remote server
+        group:
+           name: WebAdmins
+           gid: 2011
+           state: present
+
+      - name: Add user "sysadmin" to remote server
+        user:
+          name: sysadmin
+          comment: "Privileged User"
+          group: WebAdmins
+          append: yes
+          state: present
+
+      - name: sudo without password for WebAdmins group
+        copy:
+          content: '%WebAdmins ALL=(ALL:ALL) NOPASSWD:ALL'
+          dest: /etc/sudoers.d/wheel_nopasswd
+          mode: 0440
+
+
+      # - name: test sudo command
+      #   become: true
+      #   become_method: su
+      #   become_user: sysadmin
+      #   become_flags: '-s /bin/sh'
+      #   shell: |
+      #     yum update -y
+      #     rpm -Va --nofiles --nodigest
+      #     amazon-linux-extras install nginx1 -y
+
+      - name: Install Utils
+        become: true
+        shell: |
+          sudo yum update -y
+          rpm -Va --nofiles --nodigest
+          sudo amazon-linux-extras install nginx1 -y
+
+
+      # Latest makes sure nginx is Current and Patched
+      - name: install nginx
+        package: >
+          name=nginx
+          state=latest
+
+      - name: start nginx
+        service: >
+          name=nginx
+          state=started
+          enabled=true
+
+      - name: ansible create directory with Lock down permissions for Access Loggign
+        file:
+          path: SecureLogging
+          state: directory
+          mode: "u=rw,g=wx,o=rwx"
+
+      - name: Pull Static Website
+        git: >
+          repo=https://github.com/austvn24/Static-Code.git
+          dest=/usr/share/nginx/stat
+          force=yes
+
+      # The users can be specified by replacing ec2-user for even groups as well.
+      # Prevents users running the nginx -v command
+      - name: prevent unauthorized individuals from knowing what version is being used
+        become: true
+        shell: |
+          sudo setfacl -m u:ec2-user:--- /usr/sbin/nginx
+
+
+      # The users can be specified by replacing ec2-user for even groups as well.
+      - name: Restrict Users listing all of the other content in the public directory
+        become: true
+        shell: |
+          sudo setfacl -R -m user:ec2-user:--- /etc/nginx
+          sudo setfacl -R -m user:ec2-user:rx /etc/nginx
+
+      - name: Serve Static Content
+        command: mv /usr/share/nginx/stat/index.html /usr/share/nginx/html/index.html
+
+      - name: Replace Nginx Standard File with
+        command: sudo mv /usr/share/nginx/stat/nginx.conf /etc/nginx/nginx.conf
+
+      - name: restart nginx
+        service: name=nginx state=restarted

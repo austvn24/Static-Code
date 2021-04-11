@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: X #ami-0742b4e673072066f
+      InstanceType: X #t2.micro
+      KeyName: X #yourkey.pem
+      SecurityGroupIds:
+        - X #sg-0e8e10a407db29907
+      SubnetId: X #subnet-074bbf4e8cb453f7e
+      UserData:
+        Fn::Base64:                                # YAML makes userdata much cleaner
+          !Sub |
+              #!/bin/bash -ex
+              sudo yum update -y
+
+
+      Tags:                                      # Tags are an example of a sequence of mappings in YAML,
+        -                                        # each key/value pair is separated by a hyphen
+          Key: Name
+          Value: InstanceForNginx
+        -
+          Key: Environment
+          Value: Development
+
+Outputs:
+  InstanceIP:
+    Description: "IP"
+    Value: !GetAtt EC2Instance.PublicIp

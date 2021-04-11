@@ -1,2 +1,3 @@
 Despite my previous failed efforts using Terraform, NGINX and Ansible that I reported to the team and was allowed to present the same project with different methods I only switched template servers which were Terraform to Cloudformation! I wanted to challenge myself and try to produce the static website to the best of my ability using the guidelines the team provided. 
-
+In regards to the Timeframe the project took me alittle longer then expected but in total the dedicated amount of time was around 5-6 hours in total.
+The time breakdown consist of 1 and a half to 2 hours of researching more information on writing my Ansible playbook (proving to be its own challenge) and the rest of my time was spent on the actual project itself serving the static website using Cloudformation, Ansible and Nginx
